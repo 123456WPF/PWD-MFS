@@ -1,0 +1,49 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+# YOLO11 object detection model with P3-P5 outputs. For Usage examples see https://docs.ultralytics.com/tasks/detect
+
+# Parameters
+nc: 80  # number of classes
+scales:  # model compound scaling constants
+  # [depth, width, max_channels]
+  n: [0.50, 0.25, 1024]
+  s: [0.50, 0.50, 1024]
+  m: [0.50, 1.00, 512]
+  l: [1.00, 1.00, 512]
+  x: [1.00, 1.50, 512]
+
+# YOLO11 原始主干网络（移除 GhostHGNetV2 特有模块）
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]]  # 0-P2/4 (标准卷积替换 HGStem)
+  - [-1, 1, Conv, [128, 3, 2]]  # 1-P3/8
+  - [-1, 3, C2f, [128, True]]  # 2 (C2f 替换 Ghost_HGBlock)
+
+  - [-1, 1, Conv, [256, 3, 2]]  # 3-P4/16
+  - [-1, 6, C2f, [256, True]]  # 4 (标准 C2f 模块)
+
+  - [-1, 1, Conv, [512, 3, 2]]  # 5-P5/32
+  - [-1, 6, C2f, [512, True]]  # 6
+  - [-1, 3, C2f, [512, True]]  # 7
+  - [-1, 1, SPPF, [512, 5]]  # 8 (保留 SPPF)
+  - [-1, 2, C2PSA, [512]]  # 9 (保留 C2PSA)
+  - [-1, 1, MPCA, []]  # 10 (保留 MPCA 模块)
+
+# YOLO11 头部（保留 LSCD 检测头）
+head:
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 11
+  - [[-1, 4], 1, Concat, [1]]  # 12 (融合 P4 特征)
+  - [-1, 2, C3k2, [256, False]]  # 13
+
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]]  # 14
+  - [[-1, 2], 1, Concat, [1]]  # 15 (融合 P3 特征)
+  - [-1, 2, C3k2, [128, False]]  # 16 (P3/8-small)
+
+  - [-1, 1, Conv, [128, 3, 2]]  # 17
+  - [[-1, 13], 1, Concat, [1]]  # 18 (融合 head P4)
+  - [-1, 2, C3k2, [256, False]]  # 19 (P4/16-medium)
+
+  - [-1, 1, Conv, [256, 3, 2]]  # 20
+  - [[-1, 10], 1, Concat, [1]]  # 21 (融合 head P5)
+  - [-1, 2, C3k2, [512, True]]  # 22 (P5/32-large)
+
+  - [[16, 19, 22], 1, Detect_LSCD, [nc, 256]]  # 保留 LSCD 检测头 (Detect(P3, P4, P5))

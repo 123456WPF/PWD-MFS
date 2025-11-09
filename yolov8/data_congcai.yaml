@@ -1,0 +1,5 @@
+train: E:/lsy/datasets/path-8/images/train  #
+val: E:/lsy/datasets/path-8/images/val  #
+
+nc: 3
+names: ['late','mid','early']
