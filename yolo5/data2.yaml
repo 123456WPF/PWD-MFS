@@ -1,0 +1,9 @@
+train: E:/lsy/datasets/path-8/images/train  #
+val: E:/lsy/datasets/path-8/images/val  #
+
+#test: D:\YOLOv11\yolov8\data\dataset\test\images
+
+nc: 3
+
+# Classes
+names: ['late','mid','early']
